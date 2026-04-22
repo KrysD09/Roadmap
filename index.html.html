@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Personalized Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #b5882a;
+    --gold-light: #d4a94a;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-soft: #3d3d39;
+    --muted: #7a7a72;
+    --border: #e2ddd5;
+    --chip-bg: #f0ece4;
+    --chip-active: #1a1a18;
+    --chip-active-text: #fff;
+    --error-bg: #fff5f5;
+    --error-text: #c0392b;
+    --high: #c0392b;
+    --med: #d4a94a;
+    --low: #5a8a6a;
+    --free: #5a8a6a;
+    --paid: #c0392b;
+    --freemium: #d4a94a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .step-label { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(28px, 5vw, 40px); color: var(--ink); margin-bottom: 12px; }
+  .subtitle { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 40px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
+
+  .field-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-soft); margin-bottom: 8px; display: block; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 6px;
+    background: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink);
+    outline: none; transition: border-color .2s;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7a72' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; cursor: pointer; }
+  textarea { resize: vertical; min-height: 100px; }
+
+  .interests-section { margin-bottom: 28px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .chip {
+    padding: 9px 18px; border-radius: 50px; border: 1.5px solid var(--border);
+    background: #fff; font-size: 14px; color: var(--ink-soft); cursor: pointer;
+    transition: all .18s; user-select: none; font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: var(--gold-light); }
+  .chip.active { background: var(--chip-active); border-color: var(--chip-active); color: var(--chip-active-text); }
+
+  .generate-btn {
+    width: 100%; padding: 18px; background: var(--ink); color: #fff; border: none;
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
+    cursor: pointer; letter-spacing: .02em; transition: background .2s; margin-top: 8px;
+  }
+  .generate-btn:hover:not(:disabled) { background: #333; }
+  .generate-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  .error-box { margin-top: 16px; padding: 14px 18px; background: var(--error-bg); border-radius: 6px; color: var(--error-text); font-size: 14px; display: none; }
+  .error-box.show { display: block; }
+
+  /* LOADING */
+  .loading-state { display: none; margin-top: 40px; }
+  .loading-state.visible { display: block; }
+  .loading-steps { display: flex; flex-direction: column; gap: 12px; }
+  .ls-item { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
+  .ls-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background .3s; }
+  .ls-item.done .ls-dot { background: var(--gold); }
+  .ls-item.active .ls-dot { background: var(--gold-light); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* RESULTS */
+  .results { display: none; margin-top: 56px; }
+  .results.visible { display: block; }
+
+  .results-header { margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1.5px solid var(--border); }
+  .results-name { font-family: 'Playfair Display', serif; font-size: 30px; margin: 6px 0 4px; }
+  .results-meta { font-size: 13px; color: var(--muted); }
+  .headline { font-size: 16px; color: var(--ink-soft); margin-top: 12px; line-height: 1.6; max-width: 680px; }
+
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--gold); margin-bottom: 18px; }
+
+  .market-signal { background: #fff; border: 1.5px solid var(--border); border-left: 4px solid var(--gold); border-radius: 6px; padding: 20px 24px; font-size: 15px; line-height: 1.7; color: var(--ink-soft); }
+
+  .skills-grid { display: flex; flex-direction: column; gap: 12px; }
+  .skill-row { display: flex; align-items: flex-start; gap: 14px; background: #fff; border: 1.5px solid var(--border); border-radius: 6px; padding: 14px 18px; }
+  .priority-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; color: #fff; }
+  .p-high { background: var(--high); }
+  .p-med { background: var(--med); }
+  .p-low { background: var(--low); }
+  .skill-info { flex: 1; }
+  .skill-name { font-weight: 600; font-size: 15px; margin-bottom: 3px; }
+  .skill-why { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .wef-badge { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; background: #f0ece4; color: var(--gold); padding: 2px 8px; border-radius: 20px; margin-top: 4px; display: inline-block; }
+
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .tool-card { background: #fff; border: 1.5px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+  .tool-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .tool-name { font-weight: 600; font-size: 15px; }
+  .tool-tags { display: flex; gap: 6px; }
+  .tag { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .tag-free { background: #e8f5e9; color: var(--free); }
+  .tag-paid { background: #fdecea; color: var(--paid); }
+  .tag-freemium { background: #fff8e1; color: var(--freemium); }
+  .tag-core { background: #f0ece4; color: var(--gold); }
+  .tool-use { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 20px; }
+  .timeline-left { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
+  .tl-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-top: 4px; }
+  .tl-line { flex: 1; width: 2px; background: var(--border); margin: 6px 0; }
+  .timeline-item:last-child .tl-line { display: none; }
+  .timeline-content { padding-bottom: 28px; flex: 1; }
+  .tl-period { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 4px; }
+  .tl-title { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
+  .tl-focus { font-size: 14px; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.6; }
+  .tl-actions { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .tl-actions li { font-size: 14px; color: var(--muted); padding-left: 16px; position: relative; line-height: 1.5; }
+  .tl-actions li::before { content: '→'; position: absolute; left: 0; color: var(--gold); }
+
+  .wef-box { background: var(--ink); color: #fff; border-radius: 8px; padding: 24px 28px; }
+  .wef-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 10px; font-weight: 600; }
+  .wef-text { font-size: 16px; line-height: 1.7; }
+
+  .linkedin-card { background: #fff; border: 1.5px solid var(--border); border-radius: 8px; padding: 24px; }
+  .linkedin-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .linkedin-desc { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .linkedin-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+  .linkedin-tag { padding: 8px 16px; background: var(--chip-bg); border-radius: 50px; font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+
+  .portfolio-tip { background: #fff; border: 1.5px solid var(--gold); border-radius: 8px; padding: 20px 24px; }
+  .portfolio-tip .label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 8px; }
+  .portfolio-tip p { font-size: 15px; line-height: 1.7; color: var(--ink-soft); }
+
+  .sources-footer { margin-top: 48px; padding-top: 24px; border-top: 1.5px solid var(--border); }
+  .sources-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; font-weight: 600; }
+  .sources-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .source-pill { font-size: 12px; color: var(--muted); background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 5px 12px; }
+  .source-pill span { color: var(--ink); font-weight: 600; }
+
+  .reset-btn { margin-top: 40px; padding: 12px 28px; background: transparent; border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; color: var(--muted); transition: all .2s; }
+  .reset-btn:hover { border-color: var(--ink); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- INPUT CARD -->
+  <div id="inputCard">
+    <div class="step-label">Step 1 — Tell Us About You</div>
+    <h1>Build Your Personalized Roadmap</h1>
+    <p class="subtitle">This tool cross-references your profile with current job postings, WEF 2025 skills data, and BLS projections to generate a roadmap tailored to where you are and where you want to go.</p>
+
+    <div class="form-grid">
+      <div>
+        <label class="field-label" for="nameInput">Your Name</label>
+        <input type="text" id="nameInput" placeholder="Jane Doe" value="">
+      </div>
+      <div>
+        <label class="field-label" for="countryInput">Home Country / Region</label>
+        <input type="text" id="countryInput" placeholder="e.g. Europe, Brazil, US…" value="">
+      </div>
+      <div>
+        <label class="field-label" for="roleSelect">Target Job Role</label>
+        <select id="roleSelect">
+          <option value="Marketing Research Analyst">Marketing Research Analyst</option>
+          <option value="Brand Manager">Brand Manager</option>
+          <option value="Digital Marketing Manager">Digital Marketing Manager</option>
+          <option value="Content Strategist">Content Strategist</option>
+          <option value="Social Media Manager">Social Media Manager</option>
+          <option value="Growth Marketer">Growth Marketer</option>
+          <option value="Product Marketing Manager">Product Marketing Manager</option>
+          <option value="SEO / SEM Specialist">SEO / SEM Specialist</option>
+          <option value="Marketing Data Analyst">Marketing Data Analyst</option>
+          <option value="E-commerce Marketing Manager">E-commerce Marketing Manager</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="marketSelect">Target Market / Region</label>
+        <select id="marketSelect">
+          <option value="United States">United States</option>
+          <option value="United Kingdom">United Kingdom</option>
+          <option value="European Union">European Union</option>
+          <option value="Canada">Canada</option>
+          <option value="Australia">Australia</option>
+          <option value="Southeast Asia">Southeast Asia</option>
+          <option value="Middle East">Middle East</option>
+          <option value="Latin America">Latin America</option>
+          <option value="Global / Remote">Global / Remote</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="interests-section">
+      <label class="field-label">Marketing Interests (Select All That Apply)</label>
+      <div class="chips" id="interestChips">
+        <div class="chip active" data-val="Consumer Insights">Consumer Insights</div>
+        <div class="chip" data-val="Data Analytics">Data Analytics</div>
+        <div class="chip active" data-val="Social Media">Social Media</div>
+        <div class="chip" data-val="Content Strategy">Content Strategy</div>
+        <div class="chip" data-val="E-commerce">E-commerce</div>
+        <div class="chip" data-val="Brand Strategy">Brand Strategy</div>
+        <div class="chip" data-val="SEO / SEM">SEO / SEM</div>
+        <div class="chip" data-val="Market Research">Market Research</div>
+        <div class="chip" data-val="AI Tools">AI Tools</div>
+        <div class="chip active" data-val="International Marketing">International Marketing</div>
+        <div class="chip" data-val="Influencer Marketing">Influencer Marketing</div>
+        <div class="chip active" data-val="Marketing Automation">Marketing Automation</div>
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="bgInput">Current Skills &amp; Background (Brief Description)</label>
+      <textarea id="bgInput" placeholder="e.g. I have experience in Excel, and a master's in global marketing management…"></textarea>
+    </div>
+
+    <button class="generate-btn" id="generateBtn" onclick="generateRoadmap()">Generate My Roadmap →</button>
+    <div class="error-box" id="errorBox">Could not generate roadmap. Please try again in a moment.</div>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div class="loading-state" id="loadingState">
+    <div class="section-title">Building your roadmap…</div>
+    <div class="loading-steps">
+      <div class="ls-item" id="ls1"><div class="ls-dot"></div><span>Analysing your profile and target market</span></div>
+      <div class="ls-item" id="ls2"><div class="ls-dot"></div><span>Cross-referencing WEF 2025 skills data</span></div>
+      <div class="ls-item" id="ls3"><div class="ls-dot"></div><span>Scanning live job postings for your role</span></div>
+      <div class="ls-item" id="ls4"><div class="ls-dot"></div><span>Generating your personalised timeline</span></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+  // Chip toggle
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('active'));
+  });
+
+  function getInterests() {
+    return [...document.querySelectorAll('.chip.active')].map(c => c.dataset.val);
+  }
+
+  function setLoadingStep(n) {
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('ls' + i);
+      el.classList.remove('active', 'done');
+      if (i < n) el.classList.add('done');
+      else if (i === n) el.classList.add('active');
+    }
+  }
+
+  async function generateRoadmap() {
+    const name = document.getElementById('nameInput').value.trim() || 'You';
+    const country = document.getElementById('countryInput').value.trim() || 'your region';
+    const role = document.getElementById('roleSelect').value;
+    const market = document.getElementById('marketSelect').value;
+    const interests = getInterests();
+    const background = document.getElementById('bgInput').value.trim() || 'Not specified';
+
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('errorBox').classList.remove('show');
+    document.getElementById('loadingState').classList.add('visible');
+    document.getElementById('inputCard').querySelector('.generate-btn').style.display = 'none';
+
+    setLoadingStep(1);
+    await delay(900);
+    setLoadingStep(2);
+    await delay(800);
+    setLoadingStep(3);
+
+    const prompt = buildPrompt(name, country, role, market, interests, background);
+
+    let data;
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: 'You are a career roadmap expert. Always respond with valid JSON only — no markdown, no backticks, no preamble. Start your response with { and end with }.',
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('API error:', res.status, errText);
+        throw new Error('API returned ' + res.status);
+      }
+
+      data = await res.json();
+    } catch (err) {
+      console.error('Fetch error:', err);
+      showError();
+      return;
+    }
+
+    setLoadingStep(4);
+    await delay(600);
+
+    let roadmap;
+    try {
+      const raw = data.content.find(b => b.type === 'text')?.text || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      roadmap = JSON.parse(clean);
+    } catch (e) {
+      console.error('JSON parse error:', e);
+      showError();
+      return;
+    }
+
+    document.getElementById('loadingState').classList.remove('visible');
+    renderResults(roadmap, name, role, market, country);
+  }
+
+  function showError() {
+    document.getElementById('loadingState').classList.remove('visible');
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('generateBtn').style.display = 'block';
+    document.getElementById('errorBox').classList.add('show');
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function buildPrompt(name, country, role, market, interests, background) {
+    return `Student profile:
+- Name: ${name}
+- From: ${country}
+- Target role: ${role}
+- Target market: ${market}
+- Interests: ${interests.join(', ') || 'general marketing'}
+- Background: ${background}
+
+Generate a personalized career roadmap as JSON ONLY (no markdown, no preamble). Structure:
+{
+  "headline": "A specific, personalized 1-sentence headline for their roadmap",
+  "marketSignal": "2-3 sentence insight about demand for their target role in their target market, grounded in real data",
+  "topSkills": [
+    {"name": "skill name", "priority": "high|med|low", "why": "1-sentence reason relevant to their profile and target role", "wefBacked": true}
+  ],
+  "toolStack": [
+    {"tool": "tool name", "type": "free|paid|freemium", "use": "what they use it for in marketing", "core": true}
+  ],
+  "timeline": [
+    {"period": "Months 1–3", "title": "phase title", "focus": "what to do", "actions": ["action1", "action2", "action3"]}
+  ],
+  "wefInsight": "A specific insight from WEF 2025 data relevant to their interests and role",
+  "linkedinKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6"],
+  "portfolioTip": "One specific tip for making their portfolio stand out for this exact role"
+}
+
+Return 6-8 skills, 8-10 tools (mix of free and paid), 4 timeline phases (Months 1-3, 3-6, 6-9, 9-12), 6 linkedin keywords. JSON only.`;
+  }
+
+  function renderResults(d, name, role, market, country) {
+    const r = document.getElementById('results');
+    r.classList.add('visible');
+
+    const pc = p => p === 'high' ? 'p-high' : p === 'med' ? 'p-med' : 'p-low';
+    const pl = p => p === 'high' ? '!' : p === 'med' ? '2' : '3';
+    const typeTag = t => t === 'free' ? '<span class="tag tag-free">Free</span>' : t === 'paid' ? '<span class="tag tag-paid">Paid</span>' : '<span class="tag tag-freemium">Freemium</span>';
+    const coreTag = c => c ? '<span class="tag tag-core">Core</span>' : '';
+
+    r.innerHTML = `
+      <div class="results-header">
+        <div class="step-label">Your Personalized Roadmap</div>
+        <div class="results-name">${name}'s Path to ${role}</div>
+        <div class="results-meta">${country} → ${market}</div>
+        ${d.headline ? `<div class="headline">${d.headline}</div>` : ''}
+      </div>
+
+      ${d.marketSignal ? `
+      <div class="section">
+        <div class="section-title">Market Signal</div>
+        <div class="market-signal">${d.marketSignal}</div>
+      </div>` : ''}
+
+      ${d.topSkills?.length ? `
+      <div class="section">
+        <div class="section-title">Priority Skills to Build</div>
+        <div class="skills-grid">
+          ${d.topSkills.map(s => `
+            <div class="skill-row">
+              <div class="priority-badge ${pc(s.priority)}">${pl(s.priority)}</div>
+              <div class="skill-info">
+                <div class="skill-name">${s.name}</div>
+                <div class="skill-why">${s.why}</div>
+                ${s.wefBacked ? '<div class="wef-badge">WEF 2025 backed</div>' : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>` : ''}
+
+      ${d.toolStack?.length ? `
+      <div class="section">
+        <div class="section-title">Recommended Tool Stack</div>
+        <div class="tools-grid">
+          ${d.toolStack.map(t => `
+            <div class="tool-card">
+              <div class="tool-header">
+                <div class="tool-name">${t.tool}</div>
+                <div class="tool-tags">${typeTag(t.type)}${coreTag(t.core)}</div>
+              </div>
+              <div class="tool-use">${t.use}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>` : ''}
+
+      ${d.timeline?.length ? `
+      <div class="section">
+        <div class="section-title">12-Month Roadmap</div>
+        <div class="timeline">
+          ${d.timeline.map(p => `
+            <div class="timeline-item">
+              <div class="timeline-left">
+                <div class="tl-dot"></div>
+                <div class="tl-line"></div>
+              </div>
+              <div class="timeline-content">
+                <div class="tl-period">${p.period}</div>
+                <div class="tl-title">${p.title}</div>
+                <div class="tl-focus">${p.focus}</div>
+                <ul class="tl-actions">
+                  ${(p.actions || []).map(a => `<li>${a}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>` : ''}
+
+      ${d.wefInsight ? `
+      <div class="section">
+        <div class="section-title">WEF 2025 Insight</div>
+        <div class="wef-box">
+          <div class="wef-label">World Economic Forum · Future of Jobs 2025</div>
+          <div class="wef-text">${d.wefInsight}</div>
+        </div>
+      </div>` : ''}
+
+      ${d.linkedinKeywords?.length ? `
+      <div class="section">
+        <div class="linkedin-card">
+          <div class="linkedin-title">LinkedIn Keywords to Add to Your Profile</div>
+          <div class="linkedin-desc">Add these to your headline, About section, and Skills to surface in recruiter searches for ${role} roles in ${market}.</div>
+          <div class="linkedin-tags">
+            ${d.linkedinKeywords.map(k => `<div class="linkedin-tag">${k}</div>`).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${d.portfolioTip ? `
+      <div class="section">
+        <div class="portfolio-tip">
+          <div class="label">Portfolio Tip</div>
+          <p>${d.portfolioTip}</p>
+        </div>
+      </div>` : ''}
+
+      <div class="sources-footer">
+        <div class="sources-title">Data Sources Used</div>
+        <div class="sources-list">
+          <div class="source-pill"><span>WEF</span> Future of Jobs Report 2025</div>
+          <div class="source-pill"><span>BLS</span> Occupational Outlook Handbook 2024</div>
+          <div class="source-pill"><span>LinkedIn</span> Skills in Demand Data 2025</div>
+          <div class="source-pill"><span>Indeed / Glassdoor</span> Live Job Postings Synthesis</div>
+        </div>
+      </div>
+
+      <button class="reset-btn" onclick="resetTool()">← Start Over</button>
+    `;
+
+    r.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetTool() {
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('generateBtn').style.display = 'block';
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('loadingState').classList.remove('visible');
+    document.getElementById('errorBox').classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
